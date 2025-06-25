@@ -65,8 +65,8 @@ case "$1" in
     --command="$0 --run" \
     --text="Background Remover\nLeft-click: Process clipboard\nRight-click: Menu" \
     --menu="Run Now! $0 --run \
-      | View Log ! xdg-open $SCRIPT_LOG \
-      | Quit ! killall yad" \
+      |View Log ! xdg-open $SCRIPT_LOG \
+      |Quit ! killall yad" \
     --no-middle
   ;;
 esac
