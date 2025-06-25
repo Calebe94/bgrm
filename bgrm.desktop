@@ -2,4 +2,4 @@
 Type=Application
 Name=Background Remover
 Exec=/usr/local/bin/bgrm
-Icon=applications-graphics
+Icon=/usr/local/share/icons/bgrm.png

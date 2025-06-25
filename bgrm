@@ -1,31 +1,11 @@
 #!/bin/bash
 #
 # Configuration
-ICON_PATH="$HOME/.local/share/icons/bg_remover.png"
-SCRIPT_LOG="$HOME/.background_remover.log"
+ICON_PATH="/usr/local/share/icons/bgrm.png"
+SCRIPT_LOG="$HOME/.bgrm.log"
 
 # Create notification icon (24x24 recommended)
 mkdir -p ~/.local/share/icons
-if [[ ! -f "$ICON_PATH" ]]; then
-  cat >"$ICON_PATH" <<EOF
-iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAOxAAADsQBlSsOGwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAABbSURBVEiJ7c4xCgAgDETR00l6G/3vUhAEQbBwM8yCw8wTkfMfX1c3QdR5R9Q1QdR5R9Q1QdR5R9Q1QdR5R9Q1QdR5R9Q1QdT5BkQdQdQRRB1B1BFE3QJ9wA56RqoFqAAAAABJRU5ErkJggg==
-EOF
-  base64 -d <<<"$ICON_PATH" >"$ICON_PATH"
-fi
-
-# Right-click menu definition
-MENU_ITEMS=(
-  "Run Now:$0 --run"
-  "View Log:xdg-open $SCRIPT_LOG"
-  "Quit:quit"
-)
-# Build the menu string for yad
-yad_menu_string=""
-for item in "${MENU_ITEMS[@]}"; do
-  yad_menu_string+="$item!"
-done
-# Remove the trailing '!' from the last item
-yad_menu_string=${yad_menu_string%!}
 
 # Main execution function
 run_background_remover() {

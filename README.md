@@ -1,8 +1,8 @@
+![](./bgrm.png)
+
 # bgrm
 
 A simple Linux utility that removes the background from any image in your clipboard and copies the transparent result back to the clipboard. The entire process is managed from a convenient system tray icon.
-
-![](./bgrm.png)
 
 ## Features
 
