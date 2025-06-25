@@ -1,0 +1,83 @@
+#!/bin/bash
+#
+# Configuration
+ICON_PATH="$HOME/.local/share/icons/bg_remover.png"
+SCRIPT_LOG="$HOME/.background_remover.log"
+
+# Create notification icon (24x24 recommended)
+mkdir -p ~/.local/share/icons
+if [[ ! -f "$ICON_PATH" ]]; then
+  cat > "$ICON_PATH" <<EOF
+iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAOxAAADsQBlSsOGwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAABbSURBVEiJ7c4xCgAgDETR00l6G/3vUhAEQbBwM8yCw8wTkfMfX1c3QdR5R9Q1QdR5R9Q1QdR5R9Q1QdR5R9Q1QdR5R9Q1QdT5BkQdQdQRRB1B1BFE3QJ9wA56RqoFqAAAAABJRU5ErkJggg==
+EOF
+  base64 -d <<<"$ICON_PATH" > "$ICON_PATH"
+fi
+
+# Right-click menu definition
+MENU_ITEMS=(
+  "Run Now $0 --run"
+  "View Log xdg-open $SCRIPT_LOG"
+  "Quit quit"
+)
+
+# Main execution function
+run_background_remover() {
+  # Capture all output to log with timestamp
+  {
+    echo -e "\n=== $(date) ==="
+
+    # Original script with enhancements
+    set -e
+    source ~/venv/bin/activate || {
+      echo "Virtual env activation failed"
+      exit 1
+    }
+
+    bg_image="$(mktemp /tmp/bg_XXXXXX.jpg)"
+    no_bg_image="$(mktemp /tmp/nobg_XXXXXX.png)"
+
+    cleanup() { rm -f "$bg_image" "$no_bg_image"; }
+    trap cleanup EXIT
+
+    if ! xclip -selection clipboard -t TARGETS -o 2>/dev/null | grep -q "image/"; then
+      echo "Error: Clipboard doesn't contain an image"
+      notify-send "Background Remover" "🖼️ No image in clipboard!"
+      exit 1
+    fi
+
+    if xclip -selection clipboard -t TARGETS -o | grep -q "image/png"; then
+      xclip -selection clipboard -t image/png -o >"$bg_image"
+    else
+      xclip -selection clipboard -t image/jpeg -o >"$bg_image"
+    fi
+
+    if ! backgroundremover -i "$bg_image" -o "$no_bg_image"; then
+      echo "Background removal failed"
+      notify-send "Background Remover" "❌ Removal failed! Check logs"
+      exit 1
+    fi
+
+    [[ ! -s "$no_bg_image" ]] && {
+      echo "Error: Empty output file generated"
+      notify-send "Background Remover" "⚠️ Empty output generated"
+      exit 1
+    }
+
+    xclip -selection clipboard -t image/png -i "$no_bg_image"
+    notify-send "Background Remover" "✅ Success! Transparent image copied to clipboard"
+
+  } 2>&1 | tee -a "$SCRIPT_LOG"
+}
+
+# Handle CLI arguments
+case "$1" in
+  --run) run_background_remover ;;
+  *)     # Start systray
+         yad --notification \
+             --image="$ICON_PATH" \
+             --command="$0 --run" \
+             --text="Background Remover\nLeft-click: Process clipboard\nRight-click: Menu" \
+             $(printf -- '--menu="%s" ' "${MENU_ITEMS[@]}") \
+             --no-middle
+         ;;
+esac
