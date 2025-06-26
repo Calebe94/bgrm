@@ -111,7 +111,7 @@ case "$1" in
     --image="$ICON_PATH" \
     --command="$0 --run" \
     --text="Background Remover\nLeft-click: Process clipboard\nRight-click: Menu" \
-    --menu="Run Now! $0 --run \
+    --menu="Remove background! $0 --run \
       |OCR Image to Text! $0 --ocr \
       |View Log ! xdg-open $SCRIPT_LOG \
       |Quit ! killall yad" \
