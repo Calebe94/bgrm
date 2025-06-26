@@ -7,6 +7,52 @@ SCRIPT_LOG="$HOME/.bgrm.log"
 # Create notification icon (24x24 recommended)
 mkdir -p ~/.local/share/icons
 
+# OCR function
+run_ocr() {
+  {
+    echo -e "\n=== OCR $(date) ==="
+
+    # Check if tesseract is installed
+    if ! command -v tesseract &>/dev/null; then
+      echo "Error: tesseract-ocr not installed. Install with: sudo apt install tesseract-ocr"
+      notify-send "OCR" "❌ Tesseract not installed!\nRun: sudo apt install tesseract-ocr"
+      exit 1
+    fi
+
+    # Check for image in clipboard
+    if ! xclip -selection clipboard -t TARGETS -o 2>/dev/null | grep -q "image/"; then
+      echo "Error: Clipboard doesn't contain an image"
+      notify-send "OCR" "🖼️ No image in clipboard!"
+      exit 1
+    fi
+
+    ocr_image="$(mktemp /tmp/ocr_XXXXXX.png)"
+    ocr_text="$(mktemp /tmp/ocr_XXXXXX.txt)"
+
+    cleanup() { rm -f "$ocr_image" "$ocr_text"; }
+    trap cleanup EXIT
+
+    # Get image from clipboard
+    if xclip -selection clipboard -t TARGETS -o | grep -q "image/png"; then
+      xclip -selection clipboard -t image/png -o >"$ocr_image"
+    else
+      xclip -selection clipboard -t image/jpeg -o >"$ocr_image"
+    fi
+
+    # Run OCR (English by default - change 'eng' to other language codes as needed)
+    if ! tesseract "$ocr_image" "$ocr_text" -l eng 2>/dev/null; then
+      echo "OCR processing failed"
+      notify-send "OCR" "❌ OCR failed! Check logs"
+      exit 1
+    fi
+
+    # Copy text to clipboard and show notification
+    xclip -selection clipboard -i "${ocr_text}.txt"
+    notify-send "OCR" "✅ Text copied to clipboard!\n$(head -c 100 "${ocr_text}.txt")..."
+
+  } 2>&1 | tee -a "$SCRIPT_LOG"
+}
+
 # Main execution function
 run_background_remover() {
   # Capture all output to log with timestamp
@@ -59,12 +105,14 @@ run_background_remover() {
 # Handle CLI arguments
 case "$1" in
 --run) run_background_remover ;;
+--ocr) run_ocr ;;
 *) # Start systray
   yad --notification \
     --image="$ICON_PATH" \
     --command="$0 --run" \
     --text="Background Remover\nLeft-click: Process clipboard\nRight-click: Menu" \
     --menu="Run Now! $0 --run \
+      |OCR Image to Text! $0 --ocr \
       |View Log ! xdg-open $SCRIPT_LOG \
       |Quit ! killall yad" \
     --no-middle
